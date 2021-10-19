@@ -1,0 +1,153 @@
+const e = require('express');
+var express = require('express');
+var router = express.Router();
+var sql=require('mssql/msnodesqlv8');
+
+var config={
+  user:'Yadav',
+  password:'Node',
+  server:'DESKTOP-FLVTAMD\\SQLEXPRESS',
+  database:'Yadav',
+  driver:'msnodesqlv8',
+  options:{
+    trustedConnection:true
+  }
+}
+
+var dbConfig=require('../db/conn');
+
+//Code Update Global Function
+var maxCode=async(newCode)=>{
+   await sql.connect(dbConfig.dBConnection())
+  var data= await sql.query("select max(code) as Code from NodeConnect");
+  var code=data.recordset[0].Code;
+  var nc=parseInt(code)+1;
+  if(nc<10){
+    nc="000"+nc;
+  }else if(nc<100){
+    nc="00"+nc;
+  }else if(nc<1000){
+    nc="0"+nc;
+  }
+  return nc;
+}
+
+
+
+//get Data From Database
+router.get('/getData',async(req,res)=>{
+   await sql.connect(dbConfig.dBConnection());
+  var data= await sql.query("select * from NodeConnect");
+  console.log(data.recordset);
+  res.status(201).send(data.recordset)
+})
+
+
+//add new user
+
+router.post('/addUser',async(req,res)=>{
+  var newCode=await maxCode();
+  const {userName,userPass}=req.body;
+  await sql.connect(dbConfig.dBConnection())
+  var data=await sql.query("insert into NodeConnect(code,userName,userPass) values('"+newCode+"','"+userName+"','"+userPass+"')");
+
+  if(data){
+    res.status(201).send("Data inserted Successfully")
+  }else{
+    res.status(422).send("Insertion Failed")
+  }
+  
+  
+})
+
+//Upadte The Data In DataBAse
+
+router.post('/updateUser',async(req,res)=>{
+  const {code,userName}=req.body;
+  await sql.connect(dbConfig.dBConnection())
+  var data=sql.query("update NodeConnect set userName='"+userName+"' where code='"+code+"'")
+
+  if(data){
+    res.send("User Name Updated Successfully");
+  }else{
+    res.send("Updation Failed")
+  }
+
+})
+
+
+//Delete The user
+
+router.post('/deleteUser',async(req,res)=>{
+  const {code}=req.body;
+  await sql.connect(dbConfig.dBConnection())
+  var data=sql.query("delete from NodeConnect where code='"+code+"'")
+  if(data){
+    res.send("User Delete Successfully");
+  }else{
+    res.send("Deletion  Failed")
+  }
+})
+
+
+
+
+
+
+
+
+
+//Simple Select Data And Show it in tthe Console From TheDabase
+/*
+sql.connect(config,function(err,res){
+  if(err){
+      console.log(err);
+  }
+  if(res){
+      console.log("connectd Suuc");
+  }
+
+  var request=new sql.Request();
+
+  request.query("select * from NodeConnect",(err,res)=>{
+if(err){
+  console.log(err);
+}else{
+  console.log(res.recordset);
+}
+  })
+});
+
+*/
+
+
+
+
+
+
+
+
+
+//Login Simple Router
+router.post('/login',(req,res)=>{
+let result=users.find(user=>user.email==req.body.email);
+if(result){
+  if(result.password==req.body.password){
+    res.status(200).send({
+      message:'Success Fully User is Valid'
+    })
+  }else{
+    res.status(200).send({
+      message:'Password is incorrect'
+    })
+  }
+}else{
+  res.status(200).send({
+    message:'User Not Found'
+  })
+}
+});
+
+
+
+module.exports = router;
